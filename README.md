@@ -1,7 +1,7 @@
 ## Installation
 
 ```
-npm install number-generator
+npm install combinatoire
 ```
 
 ## Simple Usage
@@ -10,10 +10,8 @@ npm install number-generator
 const combinatoire = require('combinatoire');
 
 console.log(combinatoire({
-	props : {
-		color1 : ['white', 'yellow'],
-		color2 : ['black', 'grey']
-	}
+	color1 : ['white', 'yellow'],
+	color2 : ['black', 'grey']
 }));
 ```
 Will print
@@ -30,8 +28,8 @@ Will print
 ## Explicit-form Usage
 
 In some specific case :
-* When you need to use array or function values as props
-* When you need to give a specific id to your parameter (different from value)
+* When you need to use Object/Array or function values
+* When you want to use tree-organised properties
 
 It is useful to expicit the values like
 
@@ -39,14 +37,12 @@ It is useful to expicit the values like
 const combinatoire = require('combinatoire');
 
 console.log(combinatoire({
-	props : {
-		color1 : [{
-			value: ['white1', 'white2']
-		}, {
-			value: ['yellow1', 'yellow2']
-		}],
-		color2 : ['black', 'grey']
-	}
+	color1 : [{
+		value: ['white1', 'white2']
+	}, {
+		value: ['yellow1', 'yellow2']
+	}],
+	color2 : ['black', 'grey']
 }))
 ```
 Will print
@@ -65,16 +61,14 @@ Will print
 const combinatoire = require('combinatoire');
 
 console.log(combinatoire({
-	props : {
-		color1 : ['white', 'yellow'],
-		filename : function({color1}){
-			return [color1+'.png', color1+'.jpg']
-		}
+	color1 : ['white', 'yellow'],
+	filename : function({color1}){
+		return [color1+'.png', color1+'.jpg']
 	}
 }))
 ```
 
-NB: props of type 'function' are resolved after other props, so they can takes non-function props as input but not other 'function' props
+NB: properties of type 'function' are resolved after other properties, so they can takes non-function properties as input but not other 'function' properties
 
 Will print
 ```
@@ -94,11 +88,9 @@ Will print
 const combinatoireAsync = require('combinatoire').async;
 
 combinatoireAsync({
-	props : {
-		color1 : ['white', 'yellow'],
-		filename : function({color1}){
-			return Promise.resolve([color1+'.png', color1+'.jpg']);
-		}
+	color1 : ['white', 'yellow'],
+	filename : function({color1}){
+		return Promise.resolve([color1+'.png', color1+'.jpg']);
 	}
 }).then(res => {
 	console.log(res);
@@ -120,15 +112,13 @@ Will print
 const combinatoire = require('combinatoire');
 
 console.log(combinatoire({
-	props : {
-		color1 : [{
-			value: 'white',
-			props: { color2: ['black', 'blue']}
-		}, {
-			value: 'yellow',
-			props: { color2: ['red', 'pink']}
-		}]
-	}
+	color1 : [{
+		value: 'white',
+		props: { color2: ['black', 'blue']}
+	}, {
+		value: 'yellow',
+		props: { color2: ['red', 'pink']}
+	}]
 }))
 ```
 
