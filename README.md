@@ -4,6 +4,10 @@
 npm install combinatoire
 ```
 
+## Description and original purpose
+
+I have made this library to be able to easily generate data combination, simple or complex, to generate data sample for machine learning.
+
 ## Simple Usage
 
 ```javascript
@@ -81,8 +85,6 @@ Will print
 ```
 
 ## Promise Usage
-
-
 
 ```javascript
 const combinatoireAsync = require('combinatoire').async;
