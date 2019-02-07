@@ -32,10 +32,10 @@ test('explicit form usage', t => {
 		}],
 		color2: ['black', 'grey']
 	}), [
-	  {color1: ['white1', 'white2'], color2: 'black'},
-	  {color1: ['white1', 'white2'], color2: 'grey'},
-	  {color1: ['yellow1', 'yellow2'], color2: 'black'},
-	  {color1: ['yellow1', 'yellow2'], color2: 'grey'}
+		{color1: ['white1', 'white2'], color2: 'black'},
+		{color1: ['white1', 'white2'], color2: 'grey'},
+		{color1: ['yellow1', 'yellow2'], color2: 'black'},
+		{color1: ['yellow1', 'yellow2'], color2: 'grey'}
 	]);
 });
 test('function prop', t => {
@@ -91,12 +91,12 @@ test('tree props and promises together', t => {
 			value: 'white',
 			props: {
 				color2: ['black', 'blue'],
-				filename: function({color1, color2}){
-					return new Promise((resolve) => {
+				filename({color1, color2}) {
+					return new Promise(resolve => {
 						setTimeout(() => {
-							resolve([color1+'_'+color2+'.png', color1+'_'+color2+'.jpg'])
-						},1000)
-					})
+							resolve([color1 + '_' + color2 + '.png', color1 + '_' + color2 + '.jpg']);
+						}, 1000);
+					});
 				}
 			}
 		}, {
@@ -107,11 +107,14 @@ test('tree props and promises together', t => {
 		t.deepEqual(res,
 			[{
 				color1: 'white', color2: 'black', filename: 'white_black.png'
-			},{
+			},
+			{
 				color1: 'white', color2: 'black', filename: 'white_black.jpg'
-			},{
+			},
+			{
 				color1: 'white', color2: 'blue', filename: 'white_blue.png'
-			},{
+			},
+			{
 				color1: 'white', color2: 'blue', filename: 'white_blue.jpg'
 			},
 			{
@@ -119,6 +122,6 @@ test('tree props and promises together', t => {
 			},
 			{
 				color1: 'yellow', color2: 'pink'
-			}])
-	})
+			}]);
+	});
 });
