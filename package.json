@@ -1,0 +1,19 @@
+{
+  "name": "combinatoire",
+  "version": "1.0.0",
+  "description": "Easily generate a customized combination of objects",
+  "main": "index.js",
+  "scripts": {
+    "test": "xo && ava"
+  },
+  "keywords": [
+    "combination",
+    "data generation",
+    "augmentation",
+    "generation",
+    "generator",
+    "object"
+  ],
+  "author": "Pierre Colle <piercus@gmail.com>",
+  "license": "MIT"
+}
