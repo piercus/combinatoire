@@ -167,7 +167,7 @@ const combinatoireGeneric = function (propertyConfigs, sync = true, init = {}) {
 		});
 		let promise = Promise.resolve(combinations);
 		const fnsProps = explicitProperties.filter(({fn}) => fn);
-		
+
 		const asyncIncrement = (fn, key, combins) => {
 			return Promise.all(combins.map(c => {
 				return fn(c).then(chces => {
