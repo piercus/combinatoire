@@ -38,6 +38,22 @@ test('explicit form usage', t => {
 		{color1: ['yellow1', 'yellow2'], color2: 'grey'}
 	]);
 });
+test('explicit range usage', t => {
+	const res = combinatoire({
+		color1: ['white', 'yellow'],
+		luminosity1: combinatoire.range([8, 22], 2),
+		luminosity2: combinatoire.range([8, 22], 2),
+		filename({color1}) {
+			return [color1 + '.png', color1 + '.jpg'];
+		}
+	});
+
+	t.is(res.length, 2 * 2 * 2 * 2);
+	res.forEach(r => {
+		t.true(r.luminosity1 > 8);
+		t.true(r.luminosity2 <= 22);
+	});
+});
 test('function prop', t => {
 	t.deepEqual(combinatoire({
 		color1: ['white', 'yellow'],

@@ -84,6 +84,43 @@ Will print
 ]
 ```
 
+## Usage with range values
+
+```javascript
+const combinatoire = require('combinatoire');
+
+console.log(combinatoire({
+	color1 : ['white', 'yellow'],
+	luminosity: combinatoire.range([0,1],3),
+	filename : function({color1, luminosity}){
+		return [color1+'.png', color1+'.jpg']
+	}
+}))
+```
+
+NB1: The second arguments of `combinatoire.range` is the 'weight' of this range, and will tell the lib how many different version should be generated, `1` is the default value
+
+NB2: range properties cannot be used in functions prop
+
+
+Will print
+```
+[
+  {color1: 'white', filename: 'white.png', luminosity: <random value between 0 and 1>},
+  {color1: 'white', filename: 'white.jpg', luminosity: <random value between 0 and 1>},
+  {color1: 'yellow', filename: 'red', luminosity: <random value between 0 and 1>},
+  {color1: 'yellow', filename: 'pink', luminosity: <random value between 0 and 1>},
+  {color1: 'white', filename: 'white.png', luminosity: <random value between 0 and 1>},
+  {color1: 'white', filename: 'white.jpg', luminosity: <random value between 0 and 1>},
+  {color1: 'yellow', filename: 'red', luminosity: <random value between 0 and 1>},
+  {color1: 'yellow', filename: 'pink', luminosity: <random value between 0 and 1>},
+  {color1: 'white', filename: 'white.png', luminosity: <random value between 0 and 1>},
+  {color1: 'white', filename: 'white.jpg', luminosity: <random value between 0 and 1>},
+  {color1: 'yellow', filename: 'red', luminosity: <random value between 0 and 1>},
+  {color1: 'yellow', filename: 'pink', luminosity: <random value between 0 and 1>}
+]
+```
+
 ## Promise Usage
 
 ```javascript

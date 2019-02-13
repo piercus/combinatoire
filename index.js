@@ -1,3 +1,42 @@
+
+/**
+* @typedef {Object} Range
+*/
+
+class Range {
+	constructor({range, weight, rng}) {
+		this.weight = weight;
+		this.rng = rng;
+		this.range = range;
+	}
+
+	generate() {
+		return (this.rng() * (this.range[1] - this.range[0])) + this.range[0];
+	}
+
+	setKey(key) {
+		this.key = key;
+	}
+
+	static isRange(obj) {
+		return Boolean(obj.range) && typeof (obj.generate) === 'function';
+	}
+}
+
+/**
+* @param {Array.<number>} range [start, end[ to be used
+* @param {Number} [weight=1] the weight of the range, if this is 2, it will be equivalent to have 2 luminosity values and the total number of combination will be multiply by 2
+* @param {Object} opts
+* @param {Object} opts.rng, random number generator (for instance mersenne twister generator) to be used
+*/
+const createRange = function (range, weight = 1, {rng = Math.random} = {}) {
+	return new Range({
+		range,
+		weight,
+		rng
+	});
+};
+
 /**
 * @typedef {String} PropertyKey
 */
@@ -125,6 +164,15 @@ const getExplicitProperties = function (propertyConfigs, sync, init) {
 			});
 		}
 
+		if (Range.isRange(propertyConfigs[k])) {
+			propertyConfigs[k].setKey(k);
+			if (sync) {
+				return propertyConfigs[k];
+			}
+
+			return Promise.resolve(propertyConfigs[k]);
+		}
+
 		throw new Error(`type ${typeof (propertyConfigs[k])} of property ${k} is not a valid type for combinatoire, try using ${k} : [{value: ${propertyConfigs[k]} }]`);
 	});
 
@@ -143,30 +191,54 @@ const combinatoireAsync = function (propertyConfigs) {
 	return combinatoireGeneric(propertyConfigs, false);
 };
 
+const addRangeCombinations = function ({explicitProperties, combinations}) {
+	const rangeProperties = explicitProperties.filter(p => Range.isRange(p));
+
+	const multiplier = Math.floor(rangeProperties.map(range => {
+		return range.weight;
+	}).reduce((a, b) => a * b, 1));
+
+	let newCombinations = [];
+	for (let i = 0; i < multiplier; i++) {
+		const newCombi = combinations.map(c => {
+			const add = {};
+			rangeProperties.forEach(range => {
+				add[range.key] = range.generate();
+			});
+			return Object.assign({}, c, add);
+		});
+
+		newCombinations = newCombinations.concat(newCombi);
+	}
+
+	return newCombinations;
+};
+
 const combinatoireGeneric = function (propertyConfigs, sync = true, init = {}) {
 	let combinations = [init];
 
 	if (sync) {
 		const explicitProperties = getExplicitProperties(propertyConfigs, sync, init);
 
-		explicitProperties.filter(({fn}) => !fn).forEach(({expandeds}) => {
+		explicitProperties.filter(({fn, range}) => !fn && !range).forEach(({expandeds}) => {
 			combinations = incrementCombination(combinations, expandeds);
 		});
-		explicitProperties.filter(({fn}) => fn).forEach(({key, fn}) => {
+		explicitProperties.filter(({fn, range}) => fn && !range).forEach(({key, fn}) => {
 			combinations = combinations.map(c => {
 				const expandeds = formatChoices(fn(c), key, sync, init);
 				return incrementCombination([c], expandeds);
 			}).reduce((a, b) => a.concat(b), []);
 		});
-		return combinations;
+
+		return addRangeCombinations({explicitProperties, combinations});
 	}
 
 	return getExplicitProperties(propertyConfigs, sync, init).then(explicitProperties => {
-		explicitProperties.filter(({fn}) => !fn).forEach(({expandeds}) => {
+		explicitProperties.filter(({fn, range}) => !fn && !range).forEach(({expandeds}) => {
 			combinations = incrementCombination(combinations, expandeds);
 		});
 		let promise = Promise.resolve(combinations);
-		const fnsProps = explicitProperties.filter(({fn}) => fn);
+		const fnsProps = explicitProperties.filter(({fn, range}) => fn && !range);
 
 		const asyncIncrement = (fn, key, combins) => {
 			return Promise.all(combins.map(c => {
@@ -182,10 +254,13 @@ const combinatoireGeneric = function (propertyConfigs, sync = true, init = {}) {
 		fnsProps.forEach(({key, fn}) => {
 			promise = promise.then(asyncIncrement.bind(this, fn, key));
 		});
-		return promise;
+		return promise.then(combinations => {
+			return addRangeCombinations({explicitProperties, combinations});
+		});
 	});
 };
 
 const combinatoire = combinatoireSync;
 combinatoire.async = combinatoireAsync;
+combinatoire.range = createRange;
 module.exports = combinatoire;
