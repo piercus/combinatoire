@@ -42,7 +42,7 @@ test('explicit range usage', t => {
 	const res = combinatoire({
 		color1: ['white', 'yellow'],
 		luminosity1: combinatoire.range([8, 22], 2),
-		luminosity2: combinatoire.range([8, 22], 2),
+		luminosity2: combinatoire.rangeint([8, 22], 2),
 		filename({color1}) {
 			return [color1 + '.png', color1 + '.jpg'];
 		}
@@ -50,8 +50,12 @@ test('explicit range usage', t => {
 
 	t.is(res.length, 2 * 2 * 2 * 2);
 	res.forEach(r => {
-		t.true(r.luminosity1 > 8);
-		t.true(r.luminosity2 <= 22);
+		t.true(r.luminosity1 >= 8);
+		t.true(r.luminosity1 < 22);
+
+		t.true(r.luminosity2 >= 8);
+		t.true(r.luminosity2 < 22);
+		t.is(Math.floor(r.luminosity2), r.luminosity2);
 	});
 });
 test('function prop', t => {

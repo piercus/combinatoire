@@ -4,14 +4,20 @@
 */
 
 class Range {
-	constructor({range, weight, rng}) {
+	constructor({range, weight, rng, int = false}) {
 		this.weight = weight;
 		this.rng = rng;
 		this.range = range;
+		this.int = int;
 	}
 
 	generate() {
-		return (this.rng() * (this.range[1] - this.range[0])) + this.range[0];
+		const r = (this.rng() * (this.range[1] - this.range[0])) + this.range[0];
+		if (this.int) {
+			return Math.floor(r);
+		}
+
+		return r;
 	}
 
 	setKey(key) {
@@ -34,6 +40,21 @@ const createRange = function (range, weight = 1, {rng = Math.random} = {}) {
 		range,
 		weight,
 		rng
+	});
+};
+
+/**
+* @param {Array.<number>} range [start, end[ to be used
+* @param {Number} [weight=1] the weight of the range, if this is 2, it will be equivalent to have 2 luminosity values and the total number of combination will be multiply by 2
+* @param {Object} opts
+* @param {Object} opts.rng, random number generator (for instance mersenne twister generator) to be used
+*/
+const createRangeint = function (range, weight = 1, {rng = Math.random} = {}) {
+	return new Range({
+		range,
+		weight,
+		rng,
+		int: true
 	});
 };
 
@@ -263,4 +284,5 @@ const combinatoireGeneric = function (propertyConfigs, sync = true, init = {}) {
 const combinatoire = combinatoireSync;
 combinatoire.async = combinatoireAsync;
 combinatoire.range = createRange;
+combinatoire.rangeint = createRangeint;
 module.exports = combinatoire;
