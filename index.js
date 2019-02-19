@@ -1,23 +1,35 @@
 
+var MersenneTwister = require('mersenne-twister');
+var generator = new MersenneTwister();
 /**
 * @typedef {Object} Range
 */
 
 class Range {
-	constructor({range, weight, rng, int = false}) {
+	constructor({range, weight, rng, int = false, choices}) {
 		this.weight = weight;
 		this.rng = rng;
-		this.range = range;
+		this.range = range || true;
 		this.int = int;
+		this.unformatedChoices = choices;
 	}
 
 	generate() {
-		const r = (this.rng() * (this.range[1] - this.range[0])) + this.range[0];
-		if (this.int) {
-			return Math.floor(r);
+		if(this.unformatedChoices){
+			const choices = formatChoices(this.unformatedChoices, this.key, true);
+			const l = choices.length;
+			const index = Math.floor(this.rng()*l);
+			return choices[index];
 		}
-
-		return r;
+		const r = (this.rng() * (this.range[1] - this.range[0])) + this.range[0];
+		
+		const res = {}
+		if (this.int) {
+			res[this.key] = Math.floor(r);
+		} else {
+			res[this.key] = r;
+		}
+		return res
 	}
 
 	setKey(key) {
@@ -35,7 +47,21 @@ class Range {
 * @param {Object} opts
 * @param {Object} opts.rng, random number generator (for instance mersenne twister generator) to be used
 */
-const createRange = function (range, weight = 1, {rng = Math.random} = {}) {
+const createRange = function (range, weight = 1, {rng = generator.random.bind(generator)} = {}) {
+	return new Range({
+		range,
+		weight,
+		rng
+	});
+};
+
+/**
+* @param {Array.<number>} range [start, end[ to be used
+* @param {Number} [weight=1] the weight of the range, if this is 2, it will be equivalent to have 2 luminosity values and the total number of combination will be multiply by 2
+* @param {Object} opts
+* @param {Object} opts.rng, random number generator (for instance mersenne twister generator) to be used
+*/
+const createRangetensor = function ({shape, min, max}) {
 	return new Range({
 		range,
 		weight,
@@ -57,6 +83,16 @@ const createRangeint = function (range, weight = 1, {rng = Math.random} = {}) {
 		int: true
 	});
 };
+
+const createRangearray = function (choices, weight = 1, {rng = Math.random} = {}) {
+	return new Range({
+		choices,
+		weight,
+		rng,
+		int: true
+	});
+};
+
 
 /**
 * @typedef {String} PropertyKey
@@ -133,11 +169,11 @@ const formatChoices = (choices, k, sync, init) => {// (k, v, indexV) => {
 				const expanded = Object.assign({}, init);
 				expanded[k] = v.value;
 				if (sync) {
-					const subCombinatoire = combinatoireGeneric(v.props, sync, expanded);
+					const subCombinatoire = combinatoireGeneric(v.props, {sync, init: expanded});
 					return subCombinatoire;
 				}
 
-				return combinatoireGeneric(v.props, sync, expanded).then(subCombinatoire => {
+				return combinatoireGeneric(v.props, {sync, init: expanded}).then(subCombinatoire => {
 					return subCombinatoire;
 				});
 			}
@@ -204,27 +240,33 @@ const getExplicitProperties = function (propertyConfigs, sync, init) {
 * @param {PropertyConfigs} propertyConfigs see examples, the dictionnary of values to combinate
 * @returns {Array.<Combination>} the list of all possible combination
 */
-const combinatoireSync = function (propertyConfigs) {
-	return combinatoireGeneric(propertyConfigs, true);
+const combinatoireSync = function (propertyConfigs, config = {}) {
+	return combinatoireGeneric(propertyConfigs, Object.assign({},config, {sync: true}));
 };
 
-const combinatoireAsync = function (propertyConfigs) {
-	return combinatoireGeneric(propertyConfigs, false);
+const combinatoireAsync = function (propertyConfigs, config = {}) {
+	return combinatoireGeneric(propertyConfigs, Object.assign({},config, {sync: false}));
 };
 
-const addRangeCombinations = function ({explicitProperties, combinations}) {
+const addRangeCombinations = function ({explicitProperties, combinations, repeat}) {
 	const rangeProperties = explicitProperties.filter(p => Range.isRange(p));
+	
+	let mult;
+	if(typeof(repeat) === 'number'){
+		mult = repeat;
+	} else {
+		mult = Math.floor(rangeProperties.map(range => {
+			return range.weight;
+		}).reduce((a, b) => a * b, 1));
+	}
 
-	const multiplier = Math.floor(rangeProperties.map(range => {
-		return range.weight;
-	}).reduce((a, b) => a * b, 1));
 
 	let newCombinations = [];
-	for (let i = 0; i < multiplier; i++) {
+	for (let i = 0; i < mult; i++) {
 		const newCombi = combinations.map(c => {
-			const add = {};
+			let add = {};
 			rangeProperties.forEach(range => {
-				add[range.key] = range.generate();
+				Object.assign(add, range.generate());
 			});
 			return Object.assign({}, c, add);
 		});
@@ -235,7 +277,7 @@ const addRangeCombinations = function ({explicitProperties, combinations}) {
 	return newCombinations;
 };
 
-const combinatoireGeneric = function (propertyConfigs, sync = true, init = {}) {
+const combinatoireGeneric = function (propertyConfigs, {sync = true, init = {}, repeat = null}) {
 	let combinations = [init];
 
 	if (sync) {
@@ -251,7 +293,7 @@ const combinatoireGeneric = function (propertyConfigs, sync = true, init = {}) {
 			}).reduce((a, b) => a.concat(b), []);
 		});
 
-		return addRangeCombinations({explicitProperties, combinations});
+		return addRangeCombinations({explicitProperties, combinations, repeat});
 	}
 
 	return getExplicitProperties(propertyConfigs, sync, init).then(explicitProperties => {
@@ -276,7 +318,7 @@ const combinatoireGeneric = function (propertyConfigs, sync = true, init = {}) {
 			promise = promise.then(asyncIncrement.bind(this, fn, key));
 		});
 		return promise.then(combinations => {
-			return addRangeCombinations({explicitProperties, combinations});
+			return addRangeCombinations({explicitProperties, combinations, repeat});
 		});
 	});
 };
@@ -285,4 +327,6 @@ const combinatoire = combinatoireSync;
 combinatoire.async = combinatoireAsync;
 combinatoire.range = createRange;
 combinatoire.rangeint = createRangeint;
+combinatoire.rangearray = createRangearray;
+combinatoire.rangetensor = createRangetensor;
 module.exports = combinatoire;
